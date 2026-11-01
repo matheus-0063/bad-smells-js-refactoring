@@ -1,37 +1,74 @@
 # Detecção de Bad Smells e Refatoração Segura
 
-Este é o repositório-base para o trabalho prático sobre Bad Smells e Refatoração.
+Trabalho de Testes de Software de **Matheus Fernandes de Oliveira**, matrícula **773220**.
 
-## 1. Contexto
+O projeto gera relatórios CSV e HTML para os perfis ADMIN e USER. A versão refatorada separa as regras de acesso e de prioridade da formatação, mantendo os resultados e os efeitos sobre os itens da versão original corrigida.
 
-O código em `src/ReportGenerator.js` funciona, mas foi escrito de forma mal cheirosa (com Bad Smells). Ele é difícil de ler, manter e testar.
+## Executar
 
-A suíte de testes em `__tests__/ReportGenerator.test.js` é sua **rede de segurança**. Ela está completa, robusta e testa o _comportamento_ (o resultado final), não a implementação.
+Com Node.js 18 ou superior e npm:
 
-## 2. Seu Desafio
+```bash
+npm ci
+npm test
+npm run lint
+```
 
-1.  **Analisar:** Rodar o ESLint (`npx eslint src/`) e identificar os Bad Smells apontados pela ferramenta (e manualmente).
-2.  **Refatorar:** Criar uma cópia do arquivo (`src/ReportGenerator.refactored.js`) e refatorar o código para que ele fique limpo, legível e sem os smells detectados.
-3.  **Validar:** Criar uma cópia do teste (`__tests__/ReportGenerator.refactored.test.js`), apontá-la para seu novo arquivo refatorado e garantir que **todos os testes continuem passando**.
+Os resultados registrados são **33 testes aprovados em 3 suítes** e **zero erros de lint no arquivo refatorado**. As versões das dependências estão fixadas pelo `package-lock.json`.
 
-**Regra Principal:** Você não deve alterar os testes (exceto para duplicá-los). A suíte de testes é a sua garantia de que a refatoração foi bem-sucedida.
+## Arquivos da entrega
 
-## 3. Como Começar
+- [`src/ReportGenerator.refactored.js`](src/ReportGenerator.refactored.js): implementação refatorada.
+- [`__tests__/ReportGenerator.refactored.test.js`](__tests__/ReportGenerator.refactored.test.js): cópia dos testes fornecidos, com alteração apenas do import.
+- [`tests/ReportGenerator.test.js`](tests/ReportGenerator.test.js): testes originais, sem alterações. O repositório recebido usa `tests/`, embora o enunciado mencione `__tests__/`.
+- [`__tests__/ReportGenerator.compatibility.test.js`](__tests__/ReportGenerator.compatibility.test.js): 23 verificações adicionais de compatibilidade, valores de fronteira e prioridade.
+- [`output/pdf/relatorio-bad-smells.pdf`](output/pdf/relatorio-bad-smells.pdf): relatório de 4 páginas para entrega.
+- [`docs/RELATORIO.md`](docs/RELATORIO.md): conteúdo editável do relatório.
+- [`docs/evidencias/`](docs/evidencias/): saídas reais do ESLint e dos testes, imagem da saída do linter e resumo das métricas.
 
-1.  **Instale as dependências:**
-    ```bash
-    npm install
-    ```
-2.  **Execute os testes (Rede de Segurança):**
+## Problemas anteriores à refatoração
 
-    ```bash
-    npm test
-    ```
+O projeto recebido não iniciou com todos os testes passando:
 
-    (Confirme que todos passam antes de começar).
+1. `npm test` falhava com `Cannot use import statement outside a module`. O script passou a executar o Jest com `node --experimental-vm-modules`, conforme a [documentação do Jest 29.7](https://jestjs.io/docs/29.7/ecmascript-modules).
+2. Com os módulos habilitados, passavam 4 de 5 testes. O HTML para ADMIN produzia `<tr >` em itens sem prioridade, enquanto o teste exigia `<tr>`. Foram corrigidas somente as duas linhas responsáveis pelo espaço em `src/ReportGenerator.js`, antes de iniciar a refatoração. Nenhum teste original foi alterado.
 
-3.  **Execute a Análise Estática (Detecção de Smells):**
-    ```bash
-    npx eslint src/
-    ```
-    (Analise os erros reportados pelo `eslint-plugin-sonarjs`).
+Essa correção mínima é uma exceção documentada à preservação do arquivo original solicitada no enunciado: ela permite estabelecer a rede de segurança de 5/5 testes. As demais mudanças de design estão exclusivamente no arquivo `.refactored.js`.
+
+## Smells e técnicas aplicadas
+
+| Problema | Mudança |
+| --- | --- |
+| Método longo com complexidade cognitiva 27 | Extração de funções de acesso, prioridade e composição do corpo; `generateReport` passa a ter complexidade 2. |
+| Condicionais aninhadas por perfil e formato | Condição de guarda, predicado `canViewItem` e estratégias de formatação com uma interface comum. |
+| Duplicação de linhas CSV e soma dos totais | Um único fluxo de itens visíveis renderiza a linha e acumula o total. |
+| Números mágicos 500 e 1000 | Constantes `STANDARD_USER_VALUE_LIMIT` e `ADMIN_PRIORITY_THRESHOLD`. |
+
+O limite de complexidade do ESLint foi mantido em **5**, mais rigoroso que o valor 15 sugerido no enunciado. A maior complexidade de uma função refatorada é **4**. Não foram desativadas regras para obter a aprovação.
+
+## Análises e evidências
+
+```bash
+npm run lint             # Aprova a versão refatorada
+npm run lint:original    # Reporta os 2 erros de smell do original
+npm run lint:all         # Examina src/; continua reportando os erros do original
+npm run evidence        # Reexecuta linter e testes e grava docs/evidencias/
+```
+
+Os comandos `lint:original` e `lint:all` retornam código 1 intencionalmente, pois o original foi mantido com seus smells para comparação. O comando padrão `lint` verifica a implementação que será avaliada como refatorada.
+
+As verificações adicionais comparam as saídas completas e as mutações dos itens entre as duas versões, em 21 combinações de formato e perfil. Também cobrem os limites 500/501 e 1000/1001 e chamadas consecutivas. Foram preservados o retorno vazio para formatos desconhecidos e a marcação de prioridade de ADMIN mesmo nesses formatos.
+
+## Regerar o relatório
+
+O PDF já está pronto; Python é necessário apenas para regenerá-lo:
+
+```bash
+python3 -m pip install -r requirements-relatorio.txt
+npm run evidence
+python3 scripts/generate_report.py
+```
+
+A capa usa os dados de [`docs/dados-relatorio.json`](docs/dados-relatorio.json). A imagem do linter é renderizada a partir da saída real gravada em `eslint-antes.txt`; ela não representa uma captura da interface de um aplicativo de terminal.
+
+Projeto-base: [CleitonSilvaT/bad-smells-js-refactoring](https://github.com/CleitonSilvaT/bad-smells-js-refactoring). Fork de entrega: [matheus-0063/bad-smells-js-refactoring](https://github.com/matheus-0063/bad-smells-js-refactoring).

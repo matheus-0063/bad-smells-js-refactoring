@@ -1,0 +1,12 @@
+{
+  "cognitiveComplexityLimit": 5,
+  "originalComplexity": 27,
+  "refactoredMethodComplexity": 2,
+  "refactoredMaximumComplexity": 4,
+  "originalLintErrors": 2,
+  "refactoredLintErrors": 0,
+  "passedTests": 33,
+  "totalTests": 33,
+  "passedSuites": 3,
+  "originalTestCopyMatches": true
+}

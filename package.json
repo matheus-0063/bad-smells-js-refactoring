@@ -5,8 +5,11 @@
   "main": "src/ReportGenerator.js",
   "type": "module",
   "scripts": {
-    "test": "jest",
-    "lint": "eslint src/"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "lint": "eslint src/ReportGenerator.refactored.js",
+    "lint:original": "eslint src/ReportGenerator.js",
+    "lint:all": "eslint src/",
+    "evidence": "node scripts/collect-evidence.mjs"
   },
   "keywords": [
     "refactoring",
